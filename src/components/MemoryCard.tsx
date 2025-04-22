@@ -12,6 +12,7 @@ interface MemoryCardProps {
 
 export default function MemoryCard({ card, onClick, disabled, frontImage }: MemoryCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Efeito para animação quando o card é virado ou encontra um par
   useEffect(() => {
@@ -66,16 +67,21 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
         
         {/* Verso do card (imagem virada para cima) */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-lg shadow-md overflow-hidden border-2 border-white bg-white">
-          <img 
-            src={card.imageUrl || '/img/card-back.jpg'} 
-            alt="Item da lanchonete" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error("Erro ao carregar imagem do card:", card.imageUrl);
-              // Fallback para imagem quebrada
-              (e.target as HTMLImageElement).src = "/img/card-back.jpg";
-            }}
-          />
+          {imageError ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-600 text-sm text-center p-2">
+              Erro de Imagem
+            </div>
+          ) : (
+            <img 
+              src={card.imageUrl || '/img/card-back.jpg'} 
+              alt="Item da lanchonete" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error("Erro ao carregar imagem do card:", card.imageUrl);
+                setImageError(true);
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

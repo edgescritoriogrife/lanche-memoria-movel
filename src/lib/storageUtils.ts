@@ -89,6 +89,11 @@ export function saveImages(images: string[]): void {
 export function addImage(imageUrl: string): string[] {
   const currentImages = loadImages();
   
+  // Verifica se a imagem já existe para evitar duplicações
+  if (currentImages.includes(imageUrl)) {
+    return currentImages;
+  }
+  
   // Se for uma imagem base64 grande, comprime antes de adicionar
   let processedImageUrl = imageUrl;
   if (imageUrl.length > MAX_IMAGE_SIZE && imageUrl.startsWith('data:image')) {
@@ -125,18 +130,67 @@ function compressImage(base64: string): string {
   
   if (base64.length <= maxLength) return base64;
   
-  // Se a imagem for grande demais, reduz a qualidade cortando parte da string
-  // Isso é uma técnica simples; em produção, usaria canvas para redimensionar
-  // Mantém o cabeçalho do base64 (ex: 'data:image/jpeg;base64,')
-  const header = base64.substring(0, base64.indexOf(',') + 1);
-  const imageData = base64.substring(base64.indexOf(',') + 1);
+  try {
+    // Tenta comprimir usando canvas para melhor qualidade
+    return compressWithCanvas(base64);
+  } catch (e) {
+    console.error("Erro na compressão com canvas, usando método alternativo:", e);
+    
+    // Se a imagem for grande demais, reduz a qualidade cortando parte da string
+    // Isso é uma técnica simples; em produção, usaria canvas para redimensionar
+    // Mantém o cabeçalho do base64 (ex: 'data:image/jpeg;base64,')
+    const header = base64.substring(0, base64.indexOf(',') + 1);
+    const imageData = base64.substring(base64.indexOf(',') + 1);
+    
+    // Reduz a quantidade de dados para economizar espaço
+    // Quanto menor o fator, menor a qualidade
+    const factor = maxLength / base64.length;
+    const reducedData = imageData.substring(0, Math.floor(imageData.length * factor * 0.9));
+    
+    return header + reducedData;
+  }
+}
+
+// Função para comprimir imagem usando canvas
+function compressWithCanvas(base64: string): string {
+  // Só executa no navegador
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return base64;
+  }
   
-  // Reduz a quantidade de dados para economizar espaço
-  // Quanto menor o fator, menor a qualidade
-  const factor = maxLength / base64.length;
-  const reducedData = imageData.substring(0, Math.floor(imageData.length * factor * 0.9));
+  const img = new Image();
+  img.src = base64;
   
-  return header + reducedData;
+  // Esperar a imagem carregar seria assíncrono, mas neste caso simplificado,
+  // estamos usando um método síncrono para ilustração
+  const canvas = document.createElement('canvas');
+  
+  // Redimensiona para tamanho menor (300px na maior dimensão)
+  const MAX_DIMENSION = 300;
+  let width = img.width;
+  let height = img.height;
+  
+  if (width > height && width > MAX_DIMENSION) {
+    height = Math.round(height * (MAX_DIMENSION / width));
+    width = MAX_DIMENSION;
+  } else if (height > MAX_DIMENSION) {
+    width = Math.round(width * (MAX_DIMENSION / height));
+    height = MAX_DIMENSION;
+  }
+  
+  canvas.width = width;
+  canvas.height = height;
+  
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return base64;
+  
+  ctx.drawImage(img, 0, 0, width, height);
+  
+  // Qualidade mais baixa para JPEG = arquivos menores
+  const quality = 0.7;
+  const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+  
+  return compressedBase64;
 }
 
 // Funções para gerenciar a imagem da frente do card

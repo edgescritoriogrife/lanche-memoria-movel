@@ -73,7 +73,11 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
   const handleSubmit = () => {
     if (previewImages.length > 0) {
       try {
-        previewImages.forEach(image => onUpload(image));
+        // Enviar uma imagem de cada vez para evitar duplicação
+        for (const image of previewImages) {
+          onUpload(image);
+        }
+        toast.success(`${previewImages.length} imagem(ns) adicionada(s) com sucesso!`);
         setPreviewImages([]);
         setErrorMessage(null);
       } catch (error) {
@@ -86,6 +90,10 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
   const handleCancel = () => {
     setPreviewImages([]);
     setErrorMessage(null);
+  };
+
+  const handleRemovePreview = (index: number) => {
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -123,30 +131,29 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
             {previewImages.map((img, idx) => (
               <div
                 key={idx}
-                className="aspect-square w-full max-w-xs mx-auto relative rounded-lg overflow-hidden border border-gray-200"
+                className="aspect-square w-full relative rounded-lg overflow-hidden border border-gray-200"
               >
                 <img
                   src={img}
                   alt={`Preview ${idx}`}
                   className="w-full h-full object-cover"
                 />
+                <button
+                  onClick={() => handleRemovePreview(idx)}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md"
+                  title="Remover imagem"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
               </div>
             ))}
-            <button
-              onClick={handleCancel}
-              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md"
-              style={{ right: "1rem", top: "1rem", zIndex: 20 }}
-              title="Remover seleção"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
           </div>
           <div className="flex space-x-2 justify-center">
             <Button variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>
             <Button onClick={handleSubmit} disabled={isUploading}>
-              Adicionar ao Jogo
+              Adicionar {previewImages.length > 1 ? `${previewImages.length} Imagens` : "Imagem"}
             </Button>
           </div>
         </div>
