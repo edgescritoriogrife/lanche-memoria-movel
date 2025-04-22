@@ -51,7 +51,7 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
             <img 
               src={frontImage} 
               alt="Frente do card" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=?";
               }}
@@ -68,7 +68,7 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
           <img 
             src={card.imageUrl} 
             alt="Item da lanchonete" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e) => {
               // Fallback para imagem quebrada
               (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=Imagem+Indisponível";
