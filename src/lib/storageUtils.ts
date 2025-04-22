@@ -25,13 +25,16 @@ export function loadImages(): string[] {
   try {
     const savedImages = localStorage.getItem(STORAGE_KEY);
     if (savedImages) {
-      return JSON.parse(savedImages);
+      const parsedImages = JSON.parse(savedImages);
+      console.log("Imagens carregadas:", parsedImages);
+      return parsedImages;
     }
   } catch (error) {
     console.error('Erro ao carregar imagens:', error);
   }
   
   // Se não houver imagens salvas ou ocorrer um erro, usa as imagens padrão
+  console.log("Usando imagens padrão:", DEFAULT_IMAGES);
   saveImages(DEFAULT_IMAGES);
   return DEFAULT_IMAGES;
 }

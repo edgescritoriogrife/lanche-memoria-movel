@@ -30,6 +30,10 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
     }
   };
 
+  // Debug log para verificar URLs das imagens
+  console.log("Card imageUrl:", card.imageUrl);
+  console.log("Front imageUrl:", frontImage);
+
   return (
     <div
       className={cn(
@@ -46,13 +50,14 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
         )}
       >
         {/* Frente do card (costas viradas para cima) */}
-        <div className="absolute w-full h-full backface-hidden rounded-lg shadow-md flex items-center justify-center border-2 border-white overflow-hidden">
+        <div className="absolute w-full h-full backface-hidden rounded-lg shadow-md flex items-center justify-center border-2 border-white overflow-hidden bg-white">
           {frontImage ? (
             <img 
               src={frontImage} 
               alt="Frente do card" 
               className="w-full h-full object-contain"
               onError={(e) => {
+                console.error("Erro ao carregar imagem da frente:", frontImage);
                 (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=?";
               }}
             />
@@ -64,12 +69,13 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
         </div>
         
         {/* Verso do card (imagem virada para cima) */}
-        <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-lg shadow-md overflow-hidden border-2 border-white">
+        <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-lg shadow-md overflow-hidden border-2 border-white bg-white">
           <img 
             src={card.imageUrl} 
             alt="Item da lanchonete" 
             className="w-full h-full object-contain"
             onError={(e) => {
+              console.error("Erro ao carregar imagem do card:", card.imageUrl);
               // Fallback para imagem quebrada
               (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=Imagem+Indisponível";
             }}
