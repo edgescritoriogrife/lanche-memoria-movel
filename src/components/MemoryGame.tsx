@@ -6,6 +6,8 @@ import { CardItem, createCardPairs, isGameOver, useTimer } from "@/lib/gameUtils
 import { loadImages, getFrontCardImage } from "@/lib/storageUtils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface MemoryGameProps {
   className?: string;
