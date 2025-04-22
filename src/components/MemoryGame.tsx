@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import MemoryCard from "./MemoryCard";
 import GameControls from "./GameControls";
 import { CardItem, createCardPairs, isGameOver, useTimer } from "@/lib/gameUtils";
-import { loadImages } from "@/lib/storageUtils";
+import { loadImages, getFrontCardImage } from "@/lib/storageUtils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -21,6 +21,7 @@ export default function MemoryGame({ className }: MemoryGameProps) {
   const [gameOver, setGameOver] = useState(false);
   const [time, resetTimer] = useTimer(gameStarted && !gameOver);
   const [disableCards, setDisableCards] = useState(false);
+  const [frontCardImage, setFrontCardImage] = useState(getFrontCardImage());
 
   // Inicializa o jogo
   useEffect(() => {
@@ -33,6 +34,23 @@ export default function MemoryGame({ className }: MemoryGameProps) {
       setGameOver(true);
     }
   }, [cards]);
+  
+  // Atualiza a imagem da frente do card quando necessário
+  useEffect(() => {
+    const checkFrontImage = () => {
+      const currentFrontImage = getFrontCardImage();
+      if (currentFrontImage !== frontCardImage) {
+        setFrontCardImage(currentFrontImage);
+      }
+    };
+    
+    // Verifica quando o componente é montado
+    checkFrontImage();
+    
+    // Configura um intervalo para verificar mudanças
+    const interval = setInterval(checkFrontImage, 3000);
+    return () => clearInterval(interval);
+  }, [frontCardImage]);
 
   // Inicia um novo jogo
   const startNewGame = () => {
@@ -46,6 +64,7 @@ export default function MemoryGame({ className }: MemoryGameProps) {
     resetTimer();
     setGameStarted(true);
     setGameOver(false);
+    setFrontCardImage(getFrontCardImage());
   };
 
   // Lógica quando um card é clicado
@@ -105,6 +124,21 @@ export default function MemoryGame({ className }: MemoryGameProps) {
   // Determina o número de colunas baseado no dispositivo
   const gridCols = isMobile ? "grid-cols-3" : "grid-cols-4";
 
+  // Se não houver cards suficientes, mostre uma mensagem
+  if (cards.length < 4) {
+    return (
+      <div className="text-center p-6">
+        <p className="text-lg mb-4">Não há cards suficientes para jogar.</p>
+        <p className="mb-4">Adicione pelo menos 2 imagens no painel de administração.</p>
+        <Link to="/admin">
+          <Button>
+            Ir para Administração
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col space-y-6", className)}>
       <GameControls
@@ -123,9 +157,13 @@ export default function MemoryGame({ className }: MemoryGameProps) {
             card={card}
             onClick={handleCardClick}
             disabled={disableCards}
+            frontImage={frontCardImage}
           />
         ))}
       </div>
     </div>
   );
 }
+
+// Componente auxiliar para Link
+import { Link } from "react-router-dom";

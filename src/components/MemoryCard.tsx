@@ -7,9 +7,10 @@ interface MemoryCardProps {
   card: CardItem;
   onClick: (card: CardItem) => void;
   disabled: boolean;
+  frontImage?: string;
 }
 
-export default function MemoryCard({ card, onClick, disabled }: MemoryCardProps) {
+export default function MemoryCard({ card, onClick, disabled, frontImage }: MemoryCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   
   // Efeito para animação quando o card é virado ou encontra um par
@@ -40,13 +41,26 @@ export default function MemoryCard({ card, onClick, disabled }: MemoryCardProps)
     >
       <div
         className={cn(
-          "w-full h-full transition-all duration-300 transform-gpu relative preserve-3d",
+          "w-full h-full transition-all duration-300 transform-gpu preserve-3d relative",
           (card.flipped || card.matched) ? "rotate-y-180" : ""
         )}
       >
         {/* Frente do card (costas viradas para cima) */}
-        <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-red-500 to-yellow-500 rounded-lg shadow-md flex items-center justify-center border-2 border-white">
-          <div className="text-white text-3xl font-bold">?</div>
+        <div className="absolute w-full h-full backface-hidden rounded-lg shadow-md flex items-center justify-center border-2 border-white overflow-hidden">
+          {frontImage ? (
+            <img 
+              src={frontImage} 
+              alt="Frente do card" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=?";
+              }}
+            />
+          ) : (
+            <div className="bg-gradient-to-br from-red-500 to-yellow-500 w-full h-full flex items-center justify-center">
+              <div className="text-white text-3xl font-bold">?</div>
+            </div>
+          )}
         </div>
         
         {/* Verso do card (imagem virada para cima) */}

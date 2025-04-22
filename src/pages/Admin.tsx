@@ -6,11 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
 import ImageUpload from "@/components/ImageUpload";
-import { loadImages, saveImages, addImage } from "@/lib/storageUtils";
-import { X } from "lucide-react";
+import { 
+  loadImages, 
+  saveImages, 
+  addImage, 
+  getFrontCardImage,
+  setFrontCardImage 
+} from "@/lib/storageUtils";
+import { X, ImagePlus, FileImage } from "lucide-react";
 
 export default function Admin() {
   const [images, setImages] = useState<string[]>([]);
+  const [frontCardImage, setFrontCardImageState] = useState<string>(getFrontCardImage());
   
   useEffect(() => {
     // Carrega as imagens salvas quando o componente é montado
@@ -18,18 +25,39 @@ export default function Admin() {
   }, []);
   
   const handleAddImage = (imageUrl: string) => {
-    // Adiciona a nova imagem
-    const updatedImages = addImage(imageUrl);
-    setImages(updatedImages);
-    toast.success("Imagem adicionada com sucesso!");
+    try {
+      // Adiciona a nova imagem
+      const updatedImages = addImage(imageUrl);
+      setImages(updatedImages);
+      toast.success("Imagem adicionada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao adicionar imagem:", error);
+      toast.error("Erro ao adicionar imagem. Tente uma imagem menor.");
+    }
   };
   
   const handleRemoveImage = (imageUrl: string) => {
-    // Remove a imagem selecionada
-    const updatedImages = images.filter(url => url !== imageUrl);
-    saveImages(updatedImages);
-    setImages(updatedImages);
-    toast.success("Imagem removida com sucesso!");
+    try {
+      // Remove a imagem selecionada
+      const updatedImages = images.filter(url => url !== imageUrl);
+      saveImages(updatedImages);
+      setImages(updatedImages);
+      toast.success("Imagem removida com sucesso!");
+    } catch (error) {
+      console.error("Erro ao remover imagem:", error);
+      toast.error("Erro ao remover imagem.");
+    }
+  };
+  
+  const handleSetFrontCardImage = (imageUrl: string) => {
+    try {
+      setFrontCardImage(imageUrl);
+      setFrontCardImageState(imageUrl);
+      toast.success("Imagem da frente do card definida com sucesso!");
+    } catch (error) {
+      console.error("Erro ao definir imagem da frente:", error);
+      toast.error("Erro ao definir imagem da frente. Tente uma imagem menor.");
+    }
   };
 
   return (
@@ -51,8 +79,9 @@ export default function Admin() {
       </header>
 
       <Tabs defaultValue="images" className="space-y-6">
-        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
-          <TabsTrigger value="images">Imagens Atuais</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto">
+          <TabsTrigger value="images">Imagens dos Cards</TabsTrigger>
+          <TabsTrigger value="front">Frente do Card</TabsTrigger>
           <TabsTrigger value="add">Adicionar Nova</TabsTrigger>
         </TabsList>
 
@@ -81,12 +110,15 @@ export default function Admin() {
                           }}
                         />
                       </div>
-                      <button 
-                        className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveImage(imageUrl)}
-                      >
-                        <X className="h-4 w-4 text-gray-500" />
-                      </button>
+                      <div className="absolute top-1 right-1 flex gap-1">
+                        <button 
+                          className="bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveImage(imageUrl)}
+                          title="Remover imagem"
+                        >
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -95,6 +127,57 @@ export default function Admin() {
               <div className="text-center text-sm text-gray-500 mt-6">
                 <p>As imagens são automaticamente salvas no seu navegador.</p>
                 <p>Para o jogo funcionar melhor, mantenha entre 6 e 12 imagens.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="front">
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-semibold mb-4 text-center">
+                Imagem da Frente do Card
+              </h2>
+              
+              <div className="flex flex-col items-center space-y-4">
+                <div className="aspect-square w-40 h-40 rounded-lg overflow-hidden border-2 border-dashed border-yellow-500 shadow-md">
+                  <img 
+                    src={frontCardImage} 
+                    alt="Frente do card" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=?";
+                    }}
+                  />
+                </div>
+                
+                <p className="text-center text-sm max-w-md">
+                  Esta imagem será mostrada na frente de todos os cards. 
+                  Você pode escolher uma das imagens já adicionadas ou fazer o upload de uma nova.
+                </p>
+                
+                <div className="grid grid-cols-4 gap-2 w-full max-w-md">
+                  {images.slice(0, 8).map((imageUrl, index) => (
+                    <button 
+                      key={index}
+                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        frontCardImage === imageUrl ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => handleSetFrontCardImage(imageUrl)}
+                    >
+                      <img 
+                        src={imageUrl} 
+                        alt={`Opção ${index + 1}`}
+                        className="w-full h-full object-cover" 
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="w-full max-w-md pt-4">
+                  <h3 className="font-medium text-gray-700 mb-2">Carregar nova imagem para frente do card:</h3>
+                  <ImageUpload onUpload={handleSetFrontCardImage} />
+                </div>
               </div>
             </CardContent>
           </Card>
