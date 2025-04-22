@@ -13,26 +13,62 @@ import {
   getFrontCardImage,
   setFrontCardImage 
 } from "@/lib/storageUtils";
-import { X, ImagePlus, FileImage } from "lucide-react";
+import { X, ImagePlus, FileImage, AlertTriangle } from "lucide-react";
 
 export default function Admin() {
   const [images, setImages] = useState<string[]>([]);
   const [frontCardImage, setFrontCardImageState] = useState<string>(getFrontCardImage());
+  const [storageInfo, setStorageInfo] = useState({ used: 0, total: 0, percentage: 0 });
   
   useEffect(() => {
     // Carrega as imagens salvas quando o componente é montado
     setImages(loadImages());
+    checkStorageUsage();
   }, []);
+  
+  // Verifica o uso do localStorage
+  const checkStorageUsage = () => {
+    try {
+      let totalSize = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const value = localStorage.getItem(key) || '';
+          totalSize += key.length + value.length;
+        }
+      }
+      
+      // Tamanho aproximado em bytes (2 bytes por caractere em UTF-16)
+      const usedBytes = totalSize * 2;
+      // Limite aproximado do localStorage (5MB na maioria dos navegadores)
+      const totalBytes = 5 * 1024 * 1024;
+      const percentage = Math.min(Math.round((usedBytes / totalBytes) * 100), 100);
+      
+      setStorageInfo({
+        used: Math.round(usedBytes / 1024),
+        total: Math.round(totalBytes / 1024),
+        percentage
+      });
+    } catch (error) {
+      console.error("Erro ao calcular uso de armazenamento:", error);
+    }
+  };
   
   const handleAddImage = (imageUrl: string) => {
     try {
+      // Verifica se já estamos perto do limite
+      if (storageInfo.percentage > 80) {
+        toast.warning("Armazenamento quase cheio! Pode ser necessário remover algumas imagens.");
+      }
+      
       // Adiciona a nova imagem
       const updatedImages = addImage(imageUrl);
       setImages(updatedImages);
       toast.success("Imagem adicionada com sucesso!");
+      checkStorageUsage();
     } catch (error) {
       console.error("Erro ao adicionar imagem:", error);
-      toast.error("Erro ao adicionar imagem. Tente uma imagem menor.");
+      toast.error("Erro ao adicionar imagem. Tente uma imagem menor ou remova algumas existentes.");
     }
   };
   
@@ -43,6 +79,7 @@ export default function Admin() {
       saveImages(updatedImages);
       setImages(updatedImages);
       toast.success("Imagem removida com sucesso!");
+      checkStorageUsage();
     } catch (error) {
       console.error("Erro ao remover imagem:", error);
       toast.error("Erro ao remover imagem.");
@@ -54,6 +91,7 @@ export default function Admin() {
       setFrontCardImage(imageUrl);
       setFrontCardImageState(imageUrl);
       toast.success("Imagem da frente do card definida com sucesso!");
+      checkStorageUsage();
     } catch (error) {
       console.error("Erro ao definir imagem da frente:", error);
       toast.error("Erro ao definir imagem da frente. Tente uma imagem menor.");
@@ -78,9 +116,34 @@ export default function Admin() {
         </p>
       </header>
 
+      {/* Indicador de uso de armazenamento */}
+      <div className="mb-6 px-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-gray-700">Uso de Armazenamento</span>
+          <span className={`text-sm ${storageInfo.percentage > 80 ? 'text-orange-600 font-medium' : 'text-gray-600'}`}>
+            {storageInfo.used} KB / {storageInfo.total} KB ({storageInfo.percentage}%)
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div 
+            className={`h-2.5 rounded-full ${
+              storageInfo.percentage > 90 ? 'bg-red-500' : 
+              storageInfo.percentage > 70 ? 'bg-orange-500' : 'bg-green-500'
+            }`} 
+            style={{ width: `${storageInfo.percentage}%` }}
+          ></div>
+        </div>
+        {storageInfo.percentage > 80 && (
+          <div className="mt-2 flex items-center text-orange-600 text-sm">
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            <span>Armazenamento quase cheio! Remova algumas imagens para liberar espaço.</span>
+          </div>
+        )}
+      </div>
+
       <Tabs defaultValue="images" className="space-y-6">
         <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto">
-          <TabsTrigger value="images">Imagens dos Cards</TabsTrigger>
+          <TabsTrigger value="images">Imagens dos Cards ({images.length})</TabsTrigger>
           <TabsTrigger value="front">Frente do Card</TabsTrigger>
           <TabsTrigger value="add">Adicionar Nova</TabsTrigger>
         </TabsList>

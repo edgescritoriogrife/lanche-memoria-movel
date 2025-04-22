@@ -16,6 +16,9 @@ const STORAGE_KEY = 'memory-game-images';
 const FRONT_IMAGE_KEY = 'memory-game-front-image';
 const DEFAULT_FRONT_IMAGE = "/img/card-back.jpg";
 
+// Limite máximo de caracteres para uma imagem base64 (aproximadamente 100KB)
+const MAX_IMAGE_SIZE = 100000;
+
 // Função para carregar imagens do armazenamento local
 export function loadImages(): string[] {
   if (typeof window === 'undefined') {
@@ -47,17 +50,37 @@ export function saveImages(images: string[]): void {
   }
   
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
+    // Otimiza as imagens antes de salvar
+    const optimizedImages = images.map(img => {
+      if (img.length > MAX_IMAGE_SIZE && img.startsWith('data:image')) {
+        return compressImage(img);
+      }
+      return img;
+    });
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(optimizedImages));
   } catch (error) {
     console.error('Erro ao salvar imagens:', error);
-    // Tentar salvar apenas as últimas 8 imagens se ocorrer erro de cota
-    if (images.length > 8) {
-      const reducedImages = images.slice(-8);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedImages));
-      } catch (e) {
-        console.error('Ainda não foi possível salvar:', e);
+    
+    // Se falhar, tenta salvar menos imagens ou imagens menores
+    try {
+      // Primeiro tenta apenas com URLs, sem base64
+      const urlOnlyImages = images.filter(img => !img.startsWith('data:image') || img.length < 10000);
+      if (urlOnlyImages.length >= 2) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(urlOnlyImages));
+        return;
       }
+      
+      // Se ainda não for suficiente, reduz para as últimas 8 imagens
+      const reducedImages = images.slice(-8);
+      const compressedImages = reducedImages.map(img => 
+        img.startsWith('data:image') ? compressImage(img) : img
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(compressedImages));
+    } catch (e) {
+      console.error('Falha ao salvar imagens reduzidas:', e);
+      // Como última tentativa, salva apenas as imagens padrão
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_IMAGES));
     }
   }
 }
@@ -65,7 +88,14 @@ export function saveImages(images: string[]): void {
 // Função para adicionar uma nova imagem
 export function addImage(imageUrl: string): string[] {
   const currentImages = loadImages();
-  const newImages = [...currentImages, imageUrl];
+  
+  // Se for uma imagem base64 grande, comprime antes de adicionar
+  let processedImageUrl = imageUrl;
+  if (imageUrl.length > MAX_IMAGE_SIZE && imageUrl.startsWith('data:image')) {
+    processedImageUrl = compressImage(imageUrl);
+  }
+  
+  const newImages = [...currentImages, processedImageUrl];
   saveImages(newImages);
   return newImages;
 }
@@ -90,13 +120,23 @@ export function fileToBase64(file: File): Promise<string> {
 
 // Função para compressão básica de imagens base64
 function compressImage(base64: string): string {
-  // Uma implementação simples para reduzir o tamanho do base64
-  // Na vida real, usaríamos canvas para redimensionar
-  const maxLength = 30000;
+  // Uma implementação básica para reduzir o tamanho do base64
+  const maxLength = MAX_IMAGE_SIZE;
+  
   if (base64.length <= maxLength) return base64;
   
-  // Cortar a string para economizar espaço (isso degradará a qualidade)
-  return base64.substring(0, maxLength);
+  // Se a imagem for grande demais, reduz a qualidade cortando parte da string
+  // Isso é uma técnica simples; em produção, usaria canvas para redimensionar
+  // Mantém o cabeçalho do base64 (ex: 'data:image/jpeg;base64,')
+  const header = base64.substring(0, base64.indexOf(',') + 1);
+  const imageData = base64.substring(base64.indexOf(',') + 1);
+  
+  // Reduz a quantidade de dados para economizar espaço
+  // Quanto menor o fator, menor a qualidade
+  const factor = maxLength / base64.length;
+  const reducedData = imageData.substring(0, Math.floor(imageData.length * factor * 0.9));
+  
+  return header + reducedData;
 }
 
 // Funções para gerenciar a imagem da frente do card
@@ -123,6 +163,11 @@ export function setFrontCardImage(imageUrl: string): void {
   }
   
   try {
+    // Se for uma imagem base64 grande, comprime
+    if (imageUrl.length > MAX_IMAGE_SIZE && imageUrl.startsWith('data:image')) {
+      imageUrl = compressImage(imageUrl);
+    }
+    
     localStorage.setItem(FRONT_IMAGE_KEY, imageUrl);
   } catch (error) {
     console.error('Erro ao salvar imagem da frente:', error);

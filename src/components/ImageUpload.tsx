@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ImagePlus, X } from "lucide-react";
 import { fileToBase64 } from "@/lib/storageUtils";
+import { toast } from "@/components/ui/sonner";
 
 interface ImageUploadProps {
   onUpload: (imageUrl: string) => void;
@@ -14,6 +15,7 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -46,6 +48,14 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
       return;
     }
     
+    // Verifica o tamanho do arquivo (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('A imagem é muito grande. Tamanho máximo: 5MB.');
+      return;
+    }
+    
+    setIsUploading(true);
+    
     try {
       const base64Image = await fileToBase64(file);
       setPreviewImage(base64Image);
@@ -53,13 +63,21 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
     } catch (error) {
       console.error('Erro ao processar o arquivo:', error);
       setErrorMessage('Erro ao processar o arquivo. Tente novamente.');
+    } finally {
+      setIsUploading(false);
     }
   };
   
   const handleSubmit = () => {
     if (previewImage) {
-      onUpload(previewImage);
-      setPreviewImage(null);
+      try {
+        onUpload(previewImage);
+        setPreviewImage(null);
+      } catch (error) {
+        console.error('Erro ao adicionar imagem:', error);
+        toast.error('Erro ao adicionar imagem. O armazenamento pode estar cheio.');
+        setErrorMessage('Não foi possível salvar a imagem. Tente uma imagem menor ou remova algumas imagens existentes.');
+      }
     }
   };
   
@@ -93,6 +111,7 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
             accept="image/*"
             onChange={handleFileChange}
             className="hidden"
+            disabled={isUploading}
           />
         </Card>
       ) : (
@@ -114,7 +133,7 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
             <Button variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={isUploading}>
               Adicionar ao Jogo
             </Button>
           </div>
@@ -124,6 +143,11 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
       {errorMessage && (
         <p className="text-red-500 text-sm text-center">{errorMessage}</p>
       )}
+      
+      <div className="text-center text-sm text-gray-500 mt-4">
+        <p>Dica: Para melhor desempenho, use imagens menores que 1MB.</p>
+        <p>O número máximo de imagens pode variar dependendo do seu navegador e dispositivo.</p>
+      </div>
     </div>
   );
 }
