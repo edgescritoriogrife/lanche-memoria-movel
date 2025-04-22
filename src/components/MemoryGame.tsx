@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MemoryCard from "./MemoryCard";
 import GameControls from "./GameControls";
@@ -28,11 +27,10 @@ export default function MemoryGame({ className }: MemoryGameProps) {
   const [time, resetTimer] = useTimer(gameStarted && !gameOver);
   const [disableCards, setDisableCards] = useState(false);
   const [frontCardImage, setFrontCardImage] = useState(getFrontCardImage());
-
-  // Novo estado para modal e nome do jogador
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   useEffect(() => {
     startNewGame();
@@ -61,6 +59,16 @@ export default function MemoryGame({ className }: MemoryGameProps) {
 
   const startNewGame = () => {
     const images = loadImages();
+    if (images.length < 2) {
+      setImageLoadError(true);
+      toast({
+        title: "Erro ao carregar imagens",
+        description: "Não foi possível encontrar imagens suficientes para o jogo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newCards = createCardPairs(images);
 
     setCards(newCards);
@@ -73,6 +81,7 @@ export default function MemoryGame({ className }: MemoryGameProps) {
     setFrontCardImage(getFrontCardImage());
     setPlayerName("");
     setShowNameDialog(false);
+    setImageLoadError(false);
   };
 
   const handleCardClick = (clickedCard: CardItem) => {
@@ -132,7 +141,6 @@ export default function MemoryGame({ className }: MemoryGameProps) {
 
     setSaving(true);
 
-    // Salva os dados no ranking do Supabase
     const { error } = await supabase.from("ranking").insert({
       player_name: playerName.trim(),
       score,
@@ -156,7 +164,7 @@ export default function MemoryGame({ className }: MemoryGameProps) {
 
   const gridCols = isMobile ? "grid-cols-3" : "grid-cols-4";
 
-  if (cards.length < 4) {
+  if (imageLoadError || cards.length < 4) {
     return (
       <div className="text-center p-6">
         <p className="text-lg mb-4">Não há cards suficientes para jogar.</p>
@@ -193,7 +201,6 @@ export default function MemoryGame({ className }: MemoryGameProps) {
         ))}
       </div>
 
-      {/* Modal para nome do jogador ao vencer o jogo */}
       <Dialog open={showNameDialog} onOpenChange={open => setShowNameDialog(open)}>
         <DialogContent className="max-w-xs mx-auto">
           <DialogHeader>

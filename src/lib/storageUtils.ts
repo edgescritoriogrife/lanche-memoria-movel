@@ -1,20 +1,19 @@
-
 // Lista padrão de imagens para o jogo de memória
 const DEFAULT_IMAGES = [
-  "/img/burger.jpg",
-  "/img/pizza.jpg",
-  "/img/fries.jpg",
-  "/img/soda.jpg",
-  "/img/ice-cream.jpg",
-  "/img/sandwich.jpg",
-  "/img/coffee.jpg",
-  "/img/donut.jpg",
+  "https://placehold.co/400x400?text=Burger",
+  "https://placehold.co/400x400?text=Pizza",
+  "https://placehold.co/400x400?text=Fries",
+  "https://placehold.co/400x400?text=Soda",
+  "https://placehold.co/400x400?text=Ice+Cream",
+  "https://placehold.co/400x400?text=Sandwich",
+  "https://placehold.co/400x400?text=Coffee",
+  "https://placehold.co/400x400?text=Donut",
 ];
 
 // Chaves para armazenamento local
 const STORAGE_KEY = 'memory-game-images';
 const FRONT_IMAGE_KEY = 'memory-game-front-image';
-const DEFAULT_FRONT_IMAGE = "/img/card-back.jpg";
+const DEFAULT_FRONT_IMAGE = "https://placehold.co/400x400?text=?";
 
 // Limite máximo de caracteres para uma imagem base64 (aproximadamente 100KB)
 const MAX_IMAGE_SIZE = 100000;

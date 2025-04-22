@@ -31,6 +31,9 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
     }
   };
 
+  // URL de fallback para quando a imagem não carregar
+  const fallbackImageUrl = `https://placehold.co/400x400?text=${encodeURIComponent(card.id)}`;
+
   return (
     <div
       className={cn(
@@ -73,12 +76,13 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
             </div>
           ) : (
             <img 
-              src={card.imageUrl || '/img/card-back.jpg'} 
+              src={card.imageUrl || fallbackImageUrl} 
               alt="Item da lanchonete" 
               className="w-full h-full object-cover"
               onError={(e) => {
                 console.error("Erro ao carregar imagem do card:", card.imageUrl);
                 setImageError(true);
+                (e.target as HTMLImageElement).src = fallbackImageUrl;
               }}
             />
           )}
