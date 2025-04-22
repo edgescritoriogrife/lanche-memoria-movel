@@ -1,8 +1,10 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import MemoryGame from "@/components/MemoryGame";
 import { Utensils, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IndexProps {
   user?: { email?: string };
