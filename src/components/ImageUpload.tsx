@@ -13,82 +13,84 @@ interface ImageUploadProps {
 
 export default function ImageUpload({ onUpload }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-  
+
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-  
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await processFile(e.dataTransfer.files[0]);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processFiles(Array.from(e.dataTransfer.files));
     }
   };
-  
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      await processFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      await processFiles(Array.from(e.target.files));
+      // Limpa o valor para permitir seleção do mesmo arquivo novamente em seguida, se desejar.
+      e.target.value = "";
     }
   };
-  
-  const processFile = async (file: File) => {
-    // Verifica se o arquivo é uma imagem
-    if (!file.type.match('image.*')) {
-      setErrorMessage('Por favor, selecione apenas arquivos de imagem.');
-      return;
-    }
-    
-    // Verifica o tamanho do arquivo (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('A imagem é muito grande. Tamanho máximo: 5MB.');
-      return;
-    }
-    
+
+  const processFiles = async (files: File[]) => {
+    setErrorMessage(null);
     setIsUploading(true);
-    
-    try {
-      const base64Image = await fileToBase64(file);
-      setPreviewImage(base64Image);
-      setErrorMessage(null);
-    } catch (error) {
-      console.error('Erro ao processar o arquivo:', error);
-      setErrorMessage('Erro ao processar o arquivo. Tente novamente.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-  
-  const handleSubmit = () => {
-    if (previewImage) {
+
+    const previews: string[] = [];
+    for (const file of files) {
+      // Só processa imagens.
+      if (!file.type.match('image.*')) {
+        setErrorMessage('Por favor, selecione apenas arquivos de imagem.');
+        continue;
+      }
+      // Limite do tamanho.
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage('Alguma imagem está muito grande. Tamanho máximo: 5MB.');
+        continue;
+      }
       try {
-        onUpload(previewImage);
-        setPreviewImage(null);
+        const base64Image = await fileToBase64(file);
+        previews.push(base64Image);
       } catch (error) {
-        console.error('Erro ao adicionar imagem:', error);
+        setErrorMessage('Erro ao processar algum arquivo. Tente novamente.');
+      }
+    }
+    setPreviewImages(previews);
+    setIsUploading(false);
+  };
+
+  const handleSubmit = () => {
+    if (previewImages.length > 0) {
+      try {
+        previewImages.forEach(image => onUpload(image));
+        setPreviewImages([]);
+        setErrorMessage(null);
+      } catch (error) {
         toast.error('Erro ao adicionar imagem. O armazenamento pode estar cheio.');
-        setErrorMessage('Não foi possível salvar a imagem. Tente uma imagem menor ou remova algumas imagens existentes.');
+        setErrorMessage('Não foi possível salvar a imagem. Tente uma menor ou remova imagens existentes.');
       }
     }
   };
-  
+
   const handleCancel = () => {
-    setPreviewImage(null);
+    setPreviewImages([]);
     setErrorMessage(null);
   };
 
   return (
     <div className="space-y-4">
-      {!previewImage ? (
+      {previewImages.length === 0 ? (
         <Card
           className={`border-dashed border-2 ${
             isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
@@ -100,15 +102,16 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
         >
           <ImagePlus className="h-12 w-12 text-gray-400 mb-3" />
           <p className="text-center text-gray-500 mb-1">
-            Arraste uma imagem ou clique para selecionar
+            Arraste uma ou várias imagens ou clique para selecionar
           </p>
           <p className="text-center text-gray-400 text-sm">
-            PNG, JPG ou WEBP (max. 5MB)
+            PNG, JPG ou WEBP (max. 5MB cada)
           </p>
           <Input
             id="fileInput"
             type="file"
             accept="image/*"
+            multiple
             onChange={handleFileChange}
             className="hidden"
             disabled={isUploading}
@@ -116,15 +119,24 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
         </Card>
       ) : (
         <div className="space-y-3">
-          <div className="aspect-square w-full max-w-xs mx-auto relative rounded-lg overflow-hidden border border-gray-200">
-            <img
-              src={previewImage}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {previewImages.map((img, idx) => (
+              <div
+                key={idx}
+                className="aspect-square w-full max-w-xs mx-auto relative rounded-lg overflow-hidden border border-gray-200"
+              >
+                <img
+                  src={img}
+                  alt={`Preview ${idx}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
             <button
               onClick={handleCancel}
               className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md"
+              style={{ right: "1rem", top: "1rem", zIndex: 20 }}
+              title="Remover seleção"
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>
@@ -139,14 +151,14 @@ export default function ImageUpload({ onUpload }: ImageUploadProps) {
           </div>
         </div>
       )}
-      
+
       {errorMessage && (
         <p className="text-red-500 text-sm text-center">{errorMessage}</p>
       )}
-      
+
       <div className="text-center text-sm text-gray-500 mt-4">
         <p>Dica: Para melhor desempenho, use imagens menores que 1MB.</p>
-        <p>O número máximo de imagens pode variar dependendo do seu navegador e dispositivo.</p>
+        <p>Clique ou arraste várias imagens para adicionar todas de uma vez.</p>
       </div>
     </div>
   );
