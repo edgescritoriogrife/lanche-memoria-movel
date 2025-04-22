@@ -1,11 +1,15 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import MemoryGame from "@/components/MemoryGame";
 import { Utensils, Settings } from "lucide-react";
 
-export default function Index() {
+interface IndexProps {
+  user?: { email?: string };
+}
+
+export default function Index({ user }: IndexProps) {
+  const isSuperAdmin = user?.email === "ivangualbertodeoliveirajunior@gmail.com";
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-orange-50 p-4">
       <div className="container max-w-4xl mx-auto">
@@ -19,13 +23,34 @@ export default function Index() {
         </header>
 
         {/* Link para administração */}
-        <div className="flex justify-end mb-4">
-          <Link to="/admin">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Administração</span>
-            </Button>
-          </Link>
+        <div className="flex justify-end mb-4 gap-2">
+          {isSuperAdmin ? (
+            <>
+              <Link to="/admin">
+                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Administração</span>
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }}
+              >
+                Sair
+              </Button>
+            </>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Login Admin</span>
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Card do jogo */}

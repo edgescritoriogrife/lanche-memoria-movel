@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,11 @@ import {
 } from "@/lib/storageUtils";
 import { X, ImagePlus, FileImage, AlertTriangle } from "lucide-react";
 
-export default function Admin() {
+interface AdminProps {
+  user?: { email?: string };
+}
+
+export default function Admin({ user }: AdminProps) {
   const [images, setImages] = useState<string[]>([]);
   const [frontCardImage, setFrontCardImageState] = useState<string>(getFrontCardImage());
   const [storageInfo, setStorageInfo] = useState({ used: 0, total: 0, percentage: 0 });
@@ -25,6 +28,12 @@ export default function Admin() {
     setImages(loadImages());
     checkStorageUsage();
   }, []);
+  
+  useEffect(() => {
+    if (user?.email !== "ivangualbertodeoliveirajunior@gmail.com") {
+      window.location.href = "/auth";
+    }
+  }, [user]);
   
   // Verifica o uso do localStorage
   const checkStorageUsage = () => {
