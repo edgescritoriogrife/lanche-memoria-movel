@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import MemoryGame from "@/components/MemoryGame";
 import { Utensils, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import RankingTable from "@/components/RankingTable";
 
 interface IndexProps {
   user?: { email?: string };
@@ -59,6 +60,9 @@ export default function Index({ user }: IndexProps) {
         <Card className="p-4 shadow-lg bg-white/80 backdrop-blur-sm">
           <MemoryGame />
         </Card>
+
+        {/* Ranking dos melhores jogadores */}
+        <RankingTable />
 
         {/* Rodapé */}
         <footer className="mt-8 text-center text-gray-500 text-sm">
