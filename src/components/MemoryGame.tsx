@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MemoryCard from "./MemoryCard";
 import GameControls from "./GameControls";
@@ -25,19 +24,16 @@ export default function MemoryGame({ className }: MemoryGameProps) {
   const [disableCards, setDisableCards] = useState(false);
   const [frontCardImage, setFrontCardImage] = useState(getFrontCardImage());
 
-  // Inicializa o jogo
   useEffect(() => {
     startNewGame();
   }, []);
 
-  // Verifica se o jogo acabou
   useEffect(() => {
     if (cards.length > 0 && isGameOver(cards)) {
       setGameOver(true);
     }
   }, [cards]);
   
-  // Atualiza a imagem da frente do card quando necessário
   useEffect(() => {
     const checkFrontImage = () => {
       const currentFrontImage = getFrontCardImage();
@@ -46,15 +42,12 @@ export default function MemoryGame({ className }: MemoryGameProps) {
       }
     };
     
-    // Verifica quando o componente é montado
     checkFrontImage();
     
-    // Configura um intervalo para verificar mudanças
     const interval = setInterval(checkFrontImage, 3000);
     return () => clearInterval(interval);
   }, [frontCardImage]);
 
-  // Inicia um novo jogo
   const startNewGame = () => {
     const images = loadImages();
     const newCards = createCardPairs(images);
@@ -69,23 +62,19 @@ export default function MemoryGame({ className }: MemoryGameProps) {
     setFrontCardImage(getFrontCardImage());
   };
 
-  // Lógica quando um card é clicado
   const handleCardClick = (clickedCard: CardItem) => {
     if (flippedCards.length === 2 || clickedCard.flipped || clickedCard.matched) {
       return;
     }
 
-    // Vira o card clicado
     const updatedCards = cards.map(card => 
       card.id === clickedCard.id ? { ...card, flipped: true } : card
     );
     setCards(updatedCards);
 
-    // Adiciona o card aos cards virados
     const newFlippedCards = [...flippedCards, clickedCard];
     setFlippedCards(newFlippedCards);
 
-    // Se dois cards foram virados, verifica se são iguais
     if (newFlippedCards.length === 2) {
       setMoves(moves + 1);
       setDisableCards(true);
@@ -93,7 +82,6 @@ export default function MemoryGame({ className }: MemoryGameProps) {
       const [firstCard, secondCard] = newFlippedCards;
       
       if (firstCard.imageUrl === secondCard.imageUrl) {
-        // Par encontrado
         setTimeout(() => {
           setCards(currentCards => 
             currentCards.map(card => 
@@ -107,7 +95,6 @@ export default function MemoryGame({ className }: MemoryGameProps) {
           setDisableCards(false);
         }, 500);
       } else {
-        // Par não encontrado
         setTimeout(() => {
           setCards(currentCards => 
             currentCards.map(card => 
@@ -123,10 +110,8 @@ export default function MemoryGame({ className }: MemoryGameProps) {
     }
   };
 
-  // Determina o número de colunas baseado no dispositivo
   const gridCols = isMobile ? "grid-cols-3" : "grid-cols-4";
 
-  // Se não houver cards suficientes, mostre uma mensagem
   if (cards.length < 4) {
     return (
       <div className="text-center p-6">
@@ -166,6 +151,3 @@ export default function MemoryGame({ className }: MemoryGameProps) {
     </div>
   );
 }
-
-// Componente auxiliar para Link
-import { Link } from "react-router-dom";
