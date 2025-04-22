@@ -26,8 +26,9 @@ export function loadImages(): string[] {
     const savedImages = localStorage.getItem(STORAGE_KEY);
     if (savedImages) {
       const parsedImages = JSON.parse(savedImages);
-      console.log("Imagens carregadas:", parsedImages);
-      return parsedImages;
+      if (Array.isArray(parsedImages) && parsedImages.length >= 2) {
+        return parsedImages;
+      }
     }
   } catch (error) {
     console.error('Erro ao carregar imagens:', error);
@@ -46,16 +47,7 @@ export function saveImages(images: string[]): void {
   }
   
   try {
-    // Convertemos as imagens para strings menores se forem base64
-    const optimizedImages = images.map(img => {
-      if (img.length > 50000 && img.startsWith('data:image')) {
-        // Reduzir resolução/qualidade para salvar espaço no localStorage
-        return compressImage(img);
-      }
-      return img;
-    });
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(optimizedImages));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
   } catch (error) {
     console.error('Erro ao salvar imagens:', error);
     // Tentar salvar apenas as últimas 8 imagens se ocorrer erro de cota
@@ -131,12 +123,7 @@ export function setFrontCardImage(imageUrl: string): void {
   }
   
   try {
-    // Comprime a imagem se for base64 grande
-    const optimizedImage = imageUrl.length > 50000 && imageUrl.startsWith('data:image') 
-      ? compressImage(imageUrl) 
-      : imageUrl;
-      
-    localStorage.setItem(FRONT_IMAGE_KEY, optimizedImage);
+    localStorage.setItem(FRONT_IMAGE_KEY, imageUrl);
   } catch (error) {
     console.error('Erro ao salvar imagem da frente:', error);
   }

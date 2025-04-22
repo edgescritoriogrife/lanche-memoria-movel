@@ -30,10 +30,6 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
     }
   };
 
-  // Debug log para verificar URLs das imagens
-  console.log("Card imageUrl:", card.imageUrl);
-  console.log("Front imageUrl:", frontImage);
-
   return (
     <div
       className={cn(
@@ -50,19 +46,19 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
         )}
       >
         {/* Frente do card (costas viradas para cima) */}
-        <div className="absolute w-full h-full backface-hidden rounded-lg shadow-md flex items-center justify-center border-2 border-white overflow-hidden bg-white">
+        <div className="absolute w-full h-full backface-hidden rounded-lg shadow-md flex items-center justify-center border-2 border-white overflow-hidden bg-black">
           {frontImage ? (
             <img 
               src={frontImage} 
               alt="Frente do card" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               onError={(e) => {
                 console.error("Erro ao carregar imagem da frente:", frontImage);
                 (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=?";
               }}
             />
           ) : (
-            <div className="bg-gradient-to-br from-red-500 to-yellow-500 w-full h-full flex items-center justify-center">
+            <div className="bg-gradient-to-br from-orange-500 to-yellow-400 w-full h-full flex items-center justify-center">
               <div className="text-white text-3xl font-bold">?</div>
             </div>
           )}
@@ -71,13 +67,13 @@ export default function MemoryCard({ card, onClick, disabled, frontImage }: Memo
         {/* Verso do card (imagem virada para cima) */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-lg shadow-md overflow-hidden border-2 border-white bg-white">
           <img 
-            src={card.imageUrl} 
+            src={card.imageUrl || '/img/card-back.jpg'} 
             alt="Item da lanchonete" 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             onError={(e) => {
               console.error("Erro ao carregar imagem do card:", card.imageUrl);
               // Fallback para imagem quebrada
-              (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=Imagem+Indisponível";
+              (e.target as HTMLImageElement).src = "/img/card-back.jpg";
             }}
           />
         </div>
